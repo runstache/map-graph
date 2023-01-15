@@ -1,132 +1,262 @@
-'''
-Tests for the Graph Structure Class
-'''
-
-from structures.graph import Graph
-from structures.node import Node
-import uuid
+"""
+Tests for the Graph Structure.    
+"""
 
 from assertpy import assert_that
+from src.structures.mapping import Graph, MissingNodeError
+from uuid import uuid4
 
-def test_constructor():
-    '''
-    Tests Graph Constructor.
-    '''
+def test_add_node():
+    """
+    Tests adding a Node to the graph.
+    """
     
-    g = Graph()
+    canonical_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(canonical_id)
     
-    assert_that(g, 'A new instance of a Graph can be created').is_not_none()
-    
-def test_add_vertex():
-    '''
-    Tests adding a vertext to the graph.
-    '''
-    
-    vtex = {
-        'id': 1234,
-        'name': 'test'
+    node_id = 'urn:uuid:' + str(uuid4())
+    node = {
+        'key1': 'my_value',
+        'key2': 'my_value2'
     }
     
-    n = Node(str(uuid.uuid4()), 'TestNode', vtex)
+    graph.add_node(node_id, node)
     
-    g = Graph()
-    g.add_vertex(n)
+    result = graph.get_node(node_id)
     
-    assert_that(g.n, 'Number of vertexes should be 1').is_equal_to(1)
+    assert_that(result)\
+        .is_not_none()\
+        .is_type_of(dict)\
+        .contains_entry({'key1': 'my_value'})\
+        .contains_entry({'key2':'my_value2'})
+        
+def test_get_node_not_present():
+    """
+    Tests retrieving a node value from the graph.
+    """
+    
+    canonical_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(canonical_id)
+    
+    node_id = 'urn:uuid:' + str(uuid4())
+    node = {
+        'key1': 'my_value',
+        'key2': 'my_value2'
+    }
+    
+    graph.add_node(node_id, node)
+    
+    assert_that(graph.get_node).raises(MissingNodeError).when_called_with(str(uuid4()))
+    
+    
+def test_add_relationship():
+    """
+    Tests adding a node to the graph where both nodes exist.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
+    }
+    
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
+    }
+    
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
+    
+    graph.add_relationship([node1_id, node2_id])
+    
+    result = graph.get_relationships(node1_id)
+    
+    assert_that(result).is_not_empty().contains(node2_id)
+    
+    result = graph.get_relationships(node2_id)
+    assert_that(result).is_not_empty().contains(node1_id)
+    
+    
+def test_add_relationship_missing_node():
+    """
+    Tests a Missing Node Error is returned when a 
+    node does not exist in a relationship add.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
+    }
+    
+    node2_id = 'urn:uuid:' + str(uuid4())
+    
+    graph.add_node(node1_id, node1)
+    
+    assert_that(graph.add_relationship).raises(MissingNodeError).when_called_with([node1_id, node2_id])
 
-def test_add_edge():
-    '''
-    Tests adding an edge to the graph
-    '''
     
-    item = {
-        'id': 1234,
-        'name': 'test1'
+def test_nodes_property():
+    """
+    Tests retrieving the Nodes from the graph.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
     }
     
-    vtex = {
-        'id': 567,
-        'name': 'test2'
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
     }
     
-    n1 = Node(str(uuid.uuid4()), 'TestObject', item)
-    n2 = Node(str(uuid.uuid4()), 'TestObject', vtex)
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
     
-    g = Graph()
-    g.add_edge(n1, n2)
+    result = graph.nodes
     
-    assert_that(g.n, 'Number of vertices should be 2').is_equal_to(2)
-    assert_that(g.m, 'Number of edges should be 1').is_equal_to(1)
+    assert_that(result)\
+        .is_not_none()\
+        .is_type_of(dict)\
+        .contains_key(node1_id, node2_id)
     
-def test_remove_edge() :
-    '''
-    Tests Removing an Edge
-    '''
     
-    item = {
-        'id': 1234,
-        'name': 'test1'
+def test_get_relationships():
+    """
+    Tests retrieving the relationships for a node in the graph.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
     }
     
-    vtex = {
-        'id': 567,
-        'name': 'test2'
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
     }
     
-    item2 = {
-        'id': 14556,
-        'name': 'test3'
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
+    
+    graph.add_relationship([node1_id, node2_id])
+    
+    result = graph.get_relationships(node1_id)
+    
+    assert_that(result)\
+        .is_not_empty()\
+        .is_length(1)\
+        .contains(node2_id)\
+        .does_not_contain(node1_id)
+    
+    
+def test_get_relationships_no_node():
+    """
+    Tests that a Missing Node Error is returned
+    when retreiving relationships for a node that does not exist.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
     }
     
-    n1 = Node(str(uuid.uuid4()), 'TestObject', item)
-    n2 = Node(str(uuid.uuid4()), 'TestObject', vtex)
-    n3 = Node(str(uuid.uuid4()), 'TestObject', item2)
-    
-    g = Graph()
-    g.add_edge(n1, n2)
-    g.add_edge(n2, n3)
-    
-    assert_that(g.n, 'Number of vertices should be 3').is_equal_to(3)
-    assert_that(g.m, 'Number of edges should be 2').is_equal_to(2)
-    
-    g.remove_edge(n2, n1)
-    
-    assert_that(g.m, 'Number of edges should be 1').is_equal_to(1)
-    
-def test_remove_vertex():
-    '''
-    Tests removing a vertex from the graph.
-    '''
-    
-    
-    item = {
-        'id': 1234,
-        'name': 'test1'
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
     }
     
-    vtex = {
-        'id': 567,
-        'name': 'test2'
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
+    
+    assert_that(graph.get_relationships).raises(MissingNodeError).when_called_with(str(uuid4()))
+    
+    
+def test_node_count():
+    """
+    Tests the correct number of nodes are returned.
+    """
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
     }
     
-    item2 = {
-        'id': 14556,
-        'name': 'test3'
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
     }
     
-    n1 = Node(str(uuid.uuid4()), 'TestObject', item)
-    n2 = Node(str(uuid.uuid4()), 'TestObject', vtex)
-    n3 = Node(str(uuid.uuid4()), 'TestObject', item2)
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
+    graph.add_relationship([node1_id, node2_id])
     
-    g = Graph()
-    g.add_edge(n1, n2)
-    g.add_edge(n2, n3)
+    assert_that(graph.node_count).is_equal_to(2)
     
-    assert_that(g.n, 'Number of vertices should be 3').is_equal_to(3)
-    assert_that(g.m, 'Number of edges should be 2').is_equal_to(2)
+def test_edge_count():
+    """
+    Tests the correct number of edges are returned.
+    """
     
-    g.remove_vertex(n2)
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
     
-    assert_that(g.n, 'Number of vertices should be 2').is_equal_to(2)
-    assert_that(g.m, 'Number of edges should be 0').is_equal_to(0)
+    node1_id = 'urn:uuid:' + str(uuid4())
+    node1 = {
+        'node': 1
+    }
     
+    node2_id = 'urn:uuid:' + str(uuid4())
+    node2 = {
+        'node': 2
+    }
+    
+    node3_id = 'urn:uuid:' + str(uuid4())
+    node3 = {
+        'node': 3
+    }
+    
+    
+    graph.add_node(node1_id, node1)
+    graph.add_node(node2_id, node2)
+    graph.add_node(node3_id, node3)
+    graph.add_relationship([node1_id, node2_id, node3_id])
+    
+    assert_that(graph.edge_count).is_equal_to(6)
+
+def test_graph_canonical_id():
+    """
+    Tests the canonical url is returned.
+    """    
+    
+    graph_id = 'urn:uuid:' + str(uuid4())
+    graph = Graph(graph_id)
+    
+    assert_that(graph.canonical_id).is_equal_to(graph_id)
+
+def test_missing_node_error():
+    """
+    Tests constructor for Missing Node Error
+    """
+    
+    error = MissingNodeError('Node not found')
+    
+    assert_that(error.message).is_equal_to('Node not found')
