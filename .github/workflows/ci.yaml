@@ -1,0 +1,30 @@
+name: DATA_PIPELINE_TESTS
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+            python-version: '3.9'
+            cache: 'pip'
+      - run: pip install -r dev-requirements.txt
+      - run: pytest
+  static_analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+            python-version: '3.9'
+            cache: 'pip'
+      - run: pip install -r dev-requirements.txt
+      - run: mypy src/
+      - run: pylint src/
+      - run: pycodestyle src/
+      - run: bandit -r src/
+        
