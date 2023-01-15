@@ -26,5 +26,5 @@ jobs:
       - run: mypy src/
       - run: pylint src/
       - run: pycodestyle src/
-      - run: bandit src/
+      - run: bandit -r src/
         
